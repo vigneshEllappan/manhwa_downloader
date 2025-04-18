@@ -5,5 +5,3 @@ services:
     plan: free
     region: oregon
     dockerfilePath: ./Dockerfile
-    buildCommand: "npm --prefix frontend install && npm --prefix frontend run build"
-    startCommand: "./start.sh"
