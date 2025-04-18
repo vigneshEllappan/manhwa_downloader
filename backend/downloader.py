@@ -6,6 +6,7 @@ import zipfile
 import shutil
 from PIL import Image
 import re
+import json
 
 # --- Downloader Class ---
 class ManwaDownloader:
@@ -134,8 +135,22 @@ class ManwaDownloader:
         return True
 
 
+titleUrlMap = {
+            "Regressor of the Fallen Family": "https://manhuaus.org/manga/regressor-of-the-fallen-family/",
+            "Release That Witch": "https://manhuaus.org/manga/release-that-witch-1/",
+            "Magic Emperor":"https://manhuaus.org/manga/magic-emperor-0/",
+            "Descended From Divinity": "https://manhuaus.org/manga/the-heavenly-demon-cant-live-a-normal-life/",
+            "Regressed Life of The Sword Clan's Ignoble Reincarnator":"https://manhuaus.org/manga/regressed-life-of-the-sword-clans-ignoble-reincarnator/",
+            "The Greatest Estate Developer":"https://manhuaus.org/manga/the-worlds-best-engineer/",
+            "Reincarnated Murim Lord":"https://manhuaplus.me/manhua/reincarnated-murim-lord/ajax/chapters/"
+        }
 
-def handle_download(data):
+# Function to extract the numbers from the string
+def natural_key(s):
+    return [int(text) if text.isdigit() else text.lower() for text in re.split('([0-9]+)', s)]
+
+
+def handleDownload(data):
     url = data["url"]
     folder = data["folder"]
     cbz = data["cbz"]
@@ -146,5 +161,41 @@ def handle_download(data):
     if downloader.make_request() and downloader.parse_response():
         downloader.spawn_threads()
         downloader.create_cbz()
-        return {"status": "success", "cbz": cbz}
-    return {"status": "failed"}
+        return {"statusCode": 200, "data": cbz}
+    return {"statusCode": 500}
+
+def handleChaptersGeneration(title):
+    site_url = titleUrlMap.get(title, '')
+    if not site_url:
+        return {
+            "statusCode": 500
+        }
+    if title == 'Reincarnated Murim Lord':
+        data = {
+            "action": "manga_get_chapters",
+            "manga": "4498"
+        }
+
+        headers = {
+            "Content-Type": "application/x-www-form-urlencoded",
+            "User-Agent": "Mozilla/5.0"
+        }
+
+        response = requests.post(site_url, data=data, headers=headers)
+    else:
+        response = requests.get(site_url)
+    soup = BeautifulSoup(response.text, "html.parser")
+    links = soup.select("li.wp-manga-chapter a")
+    data = {}
+    for link in links:
+        href = link.get("href")
+        text = link.text.strip()
+        if "chapter" in href.lower():
+            data[text] = href
+    sorted_dict = {k: data[k] for k in sorted(data.keys(), key=natural_key)}
+    # print(sorted_dict)
+    return {
+        "statusCode":200,
+        "data": json.dumps(sorted_dict)
+    }
+            

@@ -13,7 +13,7 @@ WORKDIR /app
 
 # Copy backend and built frontend
 COPY backend/ ./backend
-COPY --from=frontend /frontend/dist ./frontend/dist
+COPY --from=frontend /frontend/build ./frontend/build
 COPY requirements.txt .
 COPY start.sh .
 
