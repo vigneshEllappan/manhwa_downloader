@@ -16,18 +16,21 @@ function Home() {
         navigate(`/${title}/chapters`)
     }
     return (
-        <React.Fragment>
-            <h2>Available Manhwa's</h2>
-            <ul>
-                {manhwaList.map((content, index) => (
-                    <li
+        <div className="home-container">
+            <h2 className="home-heading">📚 Available Manhwa</h2>
+            <div className="home-grid">
+                {manhwaList.map((title, index) => (
+                    <div
                         key={index}
-                        onClick={() => handleClick(content)}
-                        style={{ cursor: 'pointer', color: 'blue' }}
-                    >{content}</li>
+                        className="home-card"
+                        onClick={() => handleClick(title)}
+                    >
+                        <h3 className="home-card-title">{title}</h3>
+                        <p className="home-card-subtitle">View chapters ➜</p>
+                    </div>
                 ))}
-            </ul>
-        </React.Fragment>
+            </div>
+        </div>
     )
 }
 

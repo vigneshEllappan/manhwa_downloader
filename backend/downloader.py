@@ -7,52 +7,40 @@ import shutil
 from PIL import Image
 import re
 import json
+import io
+from io import BytesIO
 
 # --- Downloader Class ---
 class ManwaDownloader:
-    def __init__(self, url, folder_name, cbz_filename, base_dir):
+    def __init__(self, url):
         self.url = url
-        self.base_dir = base_dir
-        self.folder_name = os.path.join(base_dir, folder_name)
-        if os.path.exists(self.folder_name):
-            shutil.rmtree(self.folder_name)
-        os.makedirs(self.folder_name)
-        self.cbz_filename = os.path.join(base_dir, cbz_filename)
 
-    def download_images(self, index, image):  
-        img_name = os.path.join(self.folder_name, f"image_{index}.jpg")    
-        try:
-            response = requests.get(image, stream=True)
-            if response.status_code == 200:
-                with open(img_name, 'wb') as file:
-                    for chunk in response.iter_content(1024):
-                        file.write(chunk)
-                print(f"Downloaded: {img_name}")
-                self.image_names.append(img_name)
-        except Exception as e:
-            print(f"Failed to download {image}: {e}") 
+    def download_images(self, index, image_url):
+        response = requests.get(image_url, stream=True)
+        img_data = io.BytesIO(response.content)
+        self.images.append({
+            "name": f"image_{index}.jpg",
+            "data": img_data
+        })
+        print(f"Downloaded: image_{index}.jpg")
     
 
     def combine_images_in_batches(self):
-
-        def natural_sort_key(path):
-            match = re.search(r'image_(\d+)\.jpg', os.path.basename(path))
+        def natural_sort_key(image_dict):
+            match = re.search(r'image_(\d+)\.jpg', image_dict["name"])
             return int(match.group(1)) if match else float('inf')
 
-        self.image_names.sort(key=natural_sort_key)
-
+        self.images.sort(key=natural_sort_key)
+        
         combined_images = []
-        batch_size = 3
-        batches = [self.image_names[i:i+batch_size] for i in range(0, len(self.image_names), batch_size)]
+        batch_size = 4
+        batches = [self.images[i:i+batch_size] for i in range(0, len(self.images), batch_size)]
 
         for idx, batch in enumerate(batches):
             imgs = []
-            for img_path in batch:
-                try:
-                    img = Image.open(img_path).convert("RGB")  # Ensure RGB for saving
-                    imgs.append(img)
-                except Exception as e:
-                    print(f"Error loading image {img_path}: {e}")
+            for img_dict in batch:
+                img = Image.open(img_dict["data"]).convert("RGB")
+                imgs.append(img)
 
             if not imgs:
                 print(f"Skipping batch {idx} — no valid images")
@@ -69,51 +57,48 @@ class ManwaDownloader:
                 combined_img.paste(img, (0, y_offset))
                 y_offset += img.height
 
-            combined_name = f"page_{idx+1:02d}.jpg"
-            combined_path = os.path.abspath(os.path.join(self.folder_name, combined_name))
+            combined_io = io.BytesIO()
+            combined_img.save(combined_io, format='JPEG')
+            combined_io.seek(0)
 
-            try:
-                combined_img.save(combined_path)
-                print(f"Saved combined image: {combined_path}")
-                combined_images.append(combined_path)
-            except Exception as e:
-                print(f"Error saving {combined_path}: {e}")
+            combined_images.append({
+                "name": f"page_{idx+1:02d}.jpg",
+                "data": combined_io
+            })
 
+            # Close individual image objects
             for img in imgs:
                 img.close()
-            for img_path in batch:
-                try:
-                    os.remove(img_path)
-                except Exception as e:
-                    print(f"Could not delete {img_path}: {e}")
 
-        self.image_names = combined_images
+        self.images = combined_images
 
 
 
     def spawn_threads(self):
-        self.image_names = []
+        self.images = []
         threads = []
-        for index, image in enumerate(self.image_paths):
-            thread = threading.Thread(target=self.download_images, args=(index, image))
+
+        for index, image_url in enumerate(self.image_paths):
+            thread = threading.Thread(target=self.download_images, args=(index, image_url))
             thread.start()
             threads.append(thread)
+
         for thread in threads:
             thread.join()
 
-        # 🔀 Combine if more than 20
-        if len(self.image_names) > 20:
-            print("Combining images in batches of 3...")
+        if len(self.images) > 20:
+            print("Combining images in batches of 4 (in memory)...")
             self.combine_images_in_batches()
 
-    def create_cbz(self):
-        with zipfile.ZipFile(self.cbz_filename, 'w', zipfile.ZIP_DEFLATED) as cbz:
-            for image in self.image_names:
-                cbz.write(image, os.path.basename(image))
-        print(f"CBZ file created: {self.cbz_filename}")
 
-        # Delete image folder after CBZ creation
-        shutil.rmtree(self.folder_name)
+    def create_cbz(self):
+        cbz_buffer = io.BytesIO()
+        with zipfile.ZipFile(cbz_buffer, 'w', zipfile.ZIP_DEFLATED) as cbz:
+            for img in self.images:
+                cbz.writestr(img["name"], img["data"].getvalue())
+        cbz_buffer.seek(0)
+        print("CBZ created fully in memory.")
+        return cbz_buffer.getvalue()
 
     def make_request(self):
         response = requests.get(self.url)
@@ -152,17 +137,10 @@ def natural_key(s):
 
 def handleDownload(data):
     url = data["url"]
-    folder = data["folder"]
-    cbz = data["cbz"]
-    base_dir = "downloads"
-    os.makedirs(base_dir, exist_ok=True)
-
-    downloader = ManwaDownloader(url, folder, cbz, base_dir)
+    downloader = ManwaDownloader(url)
     if downloader.make_request() and downloader.parse_response():
         downloader.spawn_threads()
-        downloader.create_cbz()
-        return {"statusCode": 200, "data": cbz}
-    return {"statusCode": 500}
+        return downloader.create_cbz()
 
 def handleChaptersGeneration(title):
     site_url = titleUrlMap.get(title, '')
@@ -193,7 +171,6 @@ def handleChaptersGeneration(title):
         if "chapter" in href.lower():
             data[text] = href
     sorted_dict = {k: data[k] for k in sorted(data.keys(), key=natural_key)}
-    # print(sorted_dict)
     return {
         "statusCode":200,
         "data": json.dumps(sorted_dict)

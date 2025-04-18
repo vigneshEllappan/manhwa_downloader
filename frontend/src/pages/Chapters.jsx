@@ -1,35 +1,103 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { GetChapters } from '../REST';
+import { GetCBZFile, GetChapters } from '../REST';
+
+const MAX_DOWNLOADS = 5;
+
 function Chapters() {
     const { title } = useParams();
     const [data, setData] = useState({});
+    const [loading, setLoading] = useState(true);
+    const [downloadingChapters, setDownloadingChapters] = useState(new Set());
 
     useEffect(() => {
-        GetChapters(title).then((response) => {
-            setData(JSON.parse(response.data))
-        }).catch(ex => {
-            console.log(ex)
-            setData({})
-        })
+        setLoading(true);
+        GetChapters(title)
+            .then((response) => {
+                setData(JSON.parse(response));
+                setLoading(false);
+            })
+            .catch((ex) => {
+                console.log(ex);
+                setData({});
+                setLoading(false);
+            });
     }, [title]);
 
-    const handleChapterClick = (title, url) => {
-        console.log(title)
-        console.log(url);
-    }
+    const handleChapterClick = (chapterTitle, url) => {
+        setDownloadingChapters((currentSet) => {
+            if (currentSet.size >= MAX_DOWNLOADS) {
+                alert("Too many downloads in progress. Please wait.");
+                return currentSet;
+            }
+    
+            const newSet = new Set(currentSet);
+            newSet.add(chapterTitle);
+            downloadChapter(chapterTitle, url);
+            return newSet;
+        });
+    };
+    
+    const downloadChapter = (chapterTitle, url) => {
+        GetCBZFile({ url })
+            .then((response) => {
+                const blobUrl = window.URL.createObjectURL(response);
+                const a = document.createElement('a');
+                a.href = blobUrl;
+                a.download = chapterTitle + '.cbz';
+                a.click();
+                window.URL.revokeObjectURL(blobUrl);
+            })
+            .catch((ex) => {
+                console.error(ex);
+            })
+            .finally(() => {
+                setDownloadingChapters((prevSet) => {
+                    const newSet = new Set(prevSet);
+                    newSet.delete(chapterTitle);
+                    return newSet;
+                });
+            });
+    };
+
     return (
-        <React.Fragment>
-            <h2>Chapter List</h2>
-            <ul>
-                {Object.entries(data).map(([title, url]) => (
-                    <li key={title} onClick={() => handleChapterClick(title, url)} style={{ cursor: 'pointer' }}>
-                        {title}
-                    </li>
-                ))}
-            </ul>
-        </React.Fragment>
-    )
+        <div className="chapters-container">
+            <h2 className="chapters-heading">📖 Available Chapters</h2>
+
+            {loading ? (
+                <div className="spinner-container">
+                    <div className="spinner"></div>
+                    <p>Loading chapters...</p>
+                </div>
+            ) : (
+                <div className="chapters-grid">
+                    {Object.entries(data).map(([chapterTitle, url]) => (
+                        <div
+                            key={chapterTitle}
+                            className="chapter-card"
+                            onClick={() =>
+                                !downloadingChapters.has(chapterTitle) &&
+                                handleChapterClick(chapterTitle, url)
+                            }
+                            style={{
+                                pointerEvents: downloadingChapters.has(chapterTitle) ? 'none' : 'auto',
+                                opacity: downloadingChapters.has(chapterTitle) ? 0.6 : 1
+                            }}
+                        >
+                            <h4 className="chapter-card-title">{chapterTitle}</h4>
+                            <p className="chapter-card-subtitle">
+                                {downloadingChapters.has(chapterTitle) ? (
+                                    <span className="spinner-small"></span>
+                                ) : (
+                                    "Download CBZ ⬇"
+                                )}
+                            </p>
+                        </div>
+                    ))}
+                </div>
+            )}
+        </div>
+    );
 }
 
 export default Chapters;

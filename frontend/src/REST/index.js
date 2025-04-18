@@ -6,3 +6,8 @@ export const GetChapters = (title) => {
         params: { title: title } })
     return processResponse(request);
 }
+
+export const GetCBZFile = (payload) => {
+    const request = axios.post('/download', payload)
+    return processResponse(request)
+}

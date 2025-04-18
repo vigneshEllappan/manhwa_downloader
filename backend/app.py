@@ -1,6 +1,7 @@
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 import os
+import base64
 from downloader import handleDownload, handleChaptersGeneration
 
 app = Flask(__name__, static_folder="../frontend/build", static_url_path="/")
@@ -24,9 +25,24 @@ def health():
 
 @app.route("/download", methods=["POST"])
 def download():
-    data = request.json
-    result = handleDownload(data)
-    return jsonify(result)
+    try:
+        # Generate the CBZ in memory
+        data = request.json
+        result = handleDownload(data)
+
+        # Encode the CBZ content as base64
+        encoded_file = base64.b64encode(result).decode("utf-8")
+
+        # Send the base64-encoded file inside the JSON response along with statusCode
+        response_data = {
+            "statusCode": 200,
+            "file": encoded_file
+        }
+        return jsonify(response_data)
+    
+    except Exception as e:
+        return jsonify({"statusCode": 500, "error": str(e)}), 500
+
 
 @app.route("/chapters", methods=["GET"])
 def getChaptersList():

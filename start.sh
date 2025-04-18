@@ -4,6 +4,10 @@
 if [ "$FLASK_ENV" = "development" ]; then
     # In development mode, use Flask's built-in server
     echo "Running in Development Mode..."
+    # Start React in frontend/ directory
+    (cd frontend && npm start) &
+
+    # Start Flask backend in backend/ directory
     python backend/app.py
 else
     # In production mode, use gunicorn
