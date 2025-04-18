@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: manhwa-downloader
+    env: docker
+    plan: free
+    region: oregon
+    dockerfilePath: ./Dockerfile
+    buildCommand: "npm --prefix frontend install && npm --prefix frontend run build"
+    startCommand: "./start.sh"
