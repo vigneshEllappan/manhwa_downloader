@@ -6,6 +6,11 @@ from downloader import handleDownload, handleChaptersGeneration
 app = Flask(__name__, static_folder="../frontend/build", static_url_path="/")
 CORS(app)
 
+if os.getenv('FLASK_ENV') == 'development':
+    app.debug = True
+else:
+    app.debug = False
+
 @app.route('/', defaults={'path': ''})
 @app.route('/<path:path>')
 def serve(path):
@@ -31,4 +36,4 @@ def getChaptersList():
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(host='0.0.0.0', port=8080)

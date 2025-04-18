@@ -1,8 +1,10 @@
 import axios from 'axios';
 
+const backendURL = process.env.REACT_APP_API_URL || "http://localhost:8080"; 
+console.log(backendURL)
 const customAxios = axios.create({
-  baseURL: 'http://127.0.0.1:5000', // fallback for dev
-  timeout: 5000
+  baseURL: backendURL,
+  timeout: 10000
 });
 
 export default customAxios;
