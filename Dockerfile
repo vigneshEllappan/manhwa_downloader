@@ -20,6 +20,7 @@ COPY --from=frontend /frontend/build ./backend/src/main/resources/static
 
 # Build Spring Boot JAR
 WORKDIR /app/backend
+RUN chmod +x ./gradlew
 RUN ./gradlew build --no-daemon
 
 # --- 3. Final Image ---
