@@ -8,6 +8,8 @@ export const GetChapters = (title) => {
 }
 
 export const GetCBZFile = (payload) => {
-    const request = axios.post('/download', payload)
+    const request = axios.post('/download', payload, {
+        responseType: 'blob'
+      })
     return processResponse(request)
 }

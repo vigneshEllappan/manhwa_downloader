@@ -14,7 +14,7 @@ function Chapters() {
         setLoading(true);
         GetChapters(title)
             .then((response) => {
-                setData(JSON.parse(response));
+                setData(response);
                 setLoading(false);
             })
             .catch((ex) => {
@@ -41,12 +41,18 @@ function Chapters() {
     const downloadChapter = (chapterTitle, url) => {
         GetCBZFile({ url })
             .then((response) => {
-                const blobUrl = window.URL.createObjectURL(response);
-                const a = document.createElement('a');
-                a.href = blobUrl;
-                a.download = chapterTitle + '.cbz';
-                a.click();
-                window.URL.revokeObjectURL(blobUrl);
+                console.log(response);
+                const url = window.URL.createObjectURL(new Blob([response], {
+                    type: 'application/zip'  // CBZ = ZIP under the hood
+                  }));
+              
+                  const link = document.createElement('a');
+                  link.href = url;
+                  link.download = chapterTitle + '.cbz'; // You can make this dynamic
+                  document.body.appendChild(link);
+                  link.click();
+                  link.remove();
+                  window.URL.revokeObjectURL(url);
             })
             .catch((ex) => {
                 console.error(ex);
