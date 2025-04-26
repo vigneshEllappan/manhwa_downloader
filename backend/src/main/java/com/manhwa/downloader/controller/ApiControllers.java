@@ -10,6 +10,9 @@ import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.http.ResponseEntity;
 import org.springframework.beans.factory.annotation.Autowired;
+
+import java.io.File;
+import java.nio.file.Files;
 import java.util.*;
 @RestController
 @RequestMapping("/api")
@@ -18,8 +21,7 @@ public class ApiControllers {
     private static final Logger logger = LoggerFactory.getLogger(ApiControllers.class);
 
     @Autowired
-    private ManhwaService manhwaService; // This is where you will handle the logic for CBZ generation
-
+    private ManhwaService manhwaService;
 
     @GetMapping("/health")
     public String health() {
@@ -28,8 +30,12 @@ public class ApiControllers {
  
     @GetMapping("/chapters")
     public ResponseEntity<?> getChapters(@RequestParam String title) {
+        if (title == null) {
+            return ResponseEntity.badRequest().body("Missing 'title' parameter");
+        }
         try {
             Map<String, String> chapters = manhwaService.getChapters(title);
+            System.out.println(chapters);
             return ResponseEntity.ok(chapters);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
@@ -38,20 +44,27 @@ public class ApiControllers {
 
     @PostMapping("/download")
     public ResponseEntity<?> download(@RequestBody Map<String, String> body) {
+        String title = body.get("title");
+        String chapter = body.get("chapter");
+        String url = body.get("url");
+        logger.info("Request Received");
+        logger.info(title + " "+ chapter + " " + url);
+
         try {
+            File file = new File(manhwaService.downloadAsCbzToFile(title, chapter, url));
 
-            byte[] cbzBytes = manhwaService.downloadAsCbz(body.get("url")); // Your method that generates the CBZ
+            logger.info("Serving file: {}", file.getName());
 
-            ByteArrayResource resource = new ByteArrayResource(cbzBytes);
-            logger.info("Successful File Processing");
-
+            ByteArrayResource resource = new ByteArrayResource(Files.readAllBytes(file.toPath()));
             return ResponseEntity.ok()
-                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"filename.cbz\"")
-                    .contentLength(cbzBytes.length)
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + file.getName() + "\"")
+                    .contentLength(file.length())
                     .contentType(MediaType.APPLICATION_OCTET_STREAM)
                     .body(resource);
+
         } catch (Exception e) {
-            return ResponseEntity.status(500).body(e.getMessage());
+            logger.error("Error during CBZ processing: ", e);
+            return ResponseEntity.status(500).body("Failed to process CBZ: " + e.getMessage());
         }
     }
 

@@ -12,8 +12,8 @@ function App() {
     <React.Fragment>
       <Router>
         <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/:title/chapters" element={<Chapters />} />
+          <Route path="/" element={<Home />} />
+          <Route path="/chapterList/:title" element={<Chapters />} />
         </Routes>
       </Router>
     </React.Fragment>

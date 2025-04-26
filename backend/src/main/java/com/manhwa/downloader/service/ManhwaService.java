@@ -1,17 +1,20 @@
 package com.manhwa.downloader.service;
 
+import com.manhwa.downloader.utils.CbzFileCache;
 import com.manhwa.downloader.utils.ImageDownloadTask;
 import com.manhwa.downloader.utils.ManhwaUtils;
 import org.jsoup.Connection;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
-
-import java.awt.image.BufferedImage;
-
+import java.io.File;
+import java.io.FileOutputStream;
+import java.nio.file.Files;
 import java.util.concurrent.*;
 import java.io.IOException;
 import java.util.*;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -64,28 +67,62 @@ public class ManhwaService {
         return chapters;
     }
 
-    public byte[] downloadAsCbz(String url) throws IOException, InterruptedException {
+    public String downloadAsCbzToFile(String title, String chapter, String url) throws IOException, InterruptedException, ExecutionException {
+        String cbzFilePath = CbzFileCache.getFilePath(title, chapter);
+        if (cbzFilePath != null) {
+            logger.info("Found File in Cache");
+            return cbzFilePath;
+        }
+
         Document doc = Jsoup.connect(url).get();
         Elements imgTags = doc.select(url.contains("reincarnated-murim-lord") ? "div.page-break img" : "div.page-break.no-gaps img");
-        List<BufferedImage> images = Collections.synchronizedList(new ArrayList<>());
-        logger.info("Img Tags List");
-        logger.info(imgTags.toString());
-        logger.info("Starting the Download Threads");
-        ExecutorService executor = Executors.newFixedThreadPool(5); // adjust 5 as needed
+        logger.info("Found {} images to download",imgTags.size());
+        // Directory Setup
+        File chapterDir = new File("/tmp/"+title, chapter);
+        chapterDir.mkdirs();
 
+        ExecutorService executor = Executors.newFixedThreadPool(5);
+        List<Future<File>> futures = new ArrayList<>();
+
+        int[] counter = {1};
         for (Element img : imgTags) {
+            final int index = counter[0]++;
             String imgUrl = url.contains("reincarnated-murim-lord") ? img.attr("src") : img.attr("data-src");
-            executor.execute(new ImageDownloadTask(imgUrl, images));
+
+            futures.add(executor.submit(new ImageDownloadTask(imgUrl, chapterDir, index)));
         }
 
         executor.shutdown();
-        executor.awaitTermination(2, TimeUnit.MINUTES); // waits until all tasks are finished
+        executor.awaitTermination(2, TimeUnit.MINUTES);
 
-
-        if (images.size() > 20) {
-            images = ManhwaUtils.combineInBatches(images, 4);
+        List<File> imageFiles = new ArrayList<>();
+        for (Future<File> future : futures) {
+            imageFiles.add(future.get());
         }
 
-        return ManhwaUtils.createCbz(images);
+        if(imageFiles.size() > 20){
+            imageFiles = ManhwaUtils.combineFilesInBatches(imageFiles, 4, chapterDir);
+        }
+        // Create CBZ
+        File cbzFile = new File("/tmp/"+title, chapter + ".cbz");
+
+        try (FileOutputStream fos = new FileOutputStream(cbzFile);
+             ZipOutputStream zos = new ZipOutputStream(fos)) {
+
+            imageFiles.sort(Comparator.comparing(File::getName));
+            for (File imgFile : imageFiles) {
+                zos.putNextEntry(new ZipEntry(imgFile.getName()));
+                Files.copy(imgFile.toPath(), zos);
+                zos.closeEntry();
+            }
+        }
+
+        // Cleanup chapter directory
+        ManhwaUtils.deleteDirectoryRecursively(chapterDir);
+
+        CbzFileCache.saveFilePath(title, chapter, cbzFile.getAbsolutePath());
+
+        return cbzFile.getAbsolutePath();
     }
+
 }

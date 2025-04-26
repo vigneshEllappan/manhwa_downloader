@@ -13,7 +13,7 @@ function Home() {
     ]
     const navigate = useNavigate();
     const handleClick = (title) => {
-        navigate(`/${title}/chapters`)
+        navigate(`/chapterList/${title}`)
     }
     return (
         <div className="home-container">

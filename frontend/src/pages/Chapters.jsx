@@ -14,6 +14,7 @@ function Chapters() {
         setLoading(true);
         GetChapters(title)
             .then((response) => {
+                console.log(response);
                 setData(response);
                 setLoading(false);
             })
@@ -39,7 +40,7 @@ function Chapters() {
     };
     
     const downloadChapter = (chapterTitle, url) => {
-        GetCBZFile({ url })
+        GetCBZFile({ url, title, chapter: chapterTitle })
             .then((response) => {
                 console.log(response);
                 const url = window.URL.createObjectURL(new Blob([response], {
