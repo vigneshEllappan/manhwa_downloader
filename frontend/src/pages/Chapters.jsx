@@ -14,8 +14,7 @@ function Chapters() {
         setLoading(true);
         GetChapters(title)
             .then((response) => {
-                console.log(response);
-                setData(response);
+                setData(JSON.parse(response));
                 setLoading(false);
             })
             .catch((ex) => {

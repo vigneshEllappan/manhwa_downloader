@@ -2,35 +2,27 @@
 FROM node:20 AS frontend
 
 WORKDIR /frontend
-COPY frontend/ ./
+COPY frontend/ .
 RUN npm install
 ARG REACT_APP_API_URL
 ENV REACT_APP_API_URL=$REACT_APP_API_URL
 RUN REACT_APP_API_URL=$REACT_APP_API_URL npm run build
 
 
-# --- 2. Build Spring Boot Backend ---
-FROM eclipse-temurin:21 AS backend-build
+# --- 2. Build Backend ---
+FROM python:3.11-slim
 
 WORKDIR /app
 
-# Copy backend source
+# Copy backend and built frontend
 COPY backend/ ./backend
-COPY --from=frontend /frontend/build ./backend/src/main/resources/static
-
-# Build Spring Boot JAR
-WORKDIR /app/backend
-RUN chmod +x ./gradlew
-RUN ./gradlew build --no-daemon
-
-# --- 3. Final Image ---
-FROM eclipse-temurin:21-jre
-
-WORKDIR /app
-
-# Copy the built JAR from the build container
-COPY --from=backend-build /app/backend/build/libs/*.jar app.jar
+COPY --from=frontend /frontend/build ./frontend/build
+COPY requirements.txt .
+COPY start.sh .
+ENV FLASK_ENV=production
+RUN pip install -r requirements.txt
+RUN chmod +x start.sh
 
 EXPOSE 8080
 
-ENTRYPOINT ["java", "-jar", "app.jar"]
+CMD ["./start.sh"]    
