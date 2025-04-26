@@ -59,7 +59,7 @@ class ManwaDownloader:
         self.images.sort(key=natural_sort_key)
 
         combined_images = []
-        batch_size = 4
+        batch_size = 2
         batches = [self.images[i:i+batch_size] for i in range(0, len(self.images), batch_size)]
 
         for idx, batch in enumerate(batches):
