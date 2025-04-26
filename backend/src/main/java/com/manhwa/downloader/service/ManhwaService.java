@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.concurrent.*;
 import java.io.IOException;
 import java.util.*;
@@ -78,10 +79,10 @@ public class ManhwaService {
         Elements imgTags = doc.select(url.contains("reincarnated-murim-lord") ? "div.page-break img" : "div.page-break.no-gaps img");
         logger.info("Found {} images to download",imgTags.size());
         // Directory Setup
-        File chapterDir = new File("/tmp/"+title, chapter);
+        File chapterDir = Paths.get("tmp", title , chapter).toFile();
         chapterDir.mkdirs();
 
-        ExecutorService executor = Executors.newFixedThreadPool(5);
+        ExecutorService executor = Executors.newFixedThreadPool(3);
         List<Future<File>> futures = new ArrayList<>();
 
         int[] counter = {1};
@@ -101,10 +102,11 @@ public class ManhwaService {
         }
 
         if(imageFiles.size() > 20){
-            imageFiles = ManhwaUtils.combineFilesInBatches(imageFiles, 4, chapterDir);
+            imageFiles = ManhwaUtils.combineFilesInBatches(imageFiles, 3, chapterDir);
         }
         // Create CBZ
-        File cbzFile = new File("/tmp/"+title, chapter + ".cbz");
+        File cbzFile = Paths.get("tmp", title , chapter + ".cbz").toFile();
+        System.out.println(cbzFile.getAbsolutePath());
 
         try (FileOutputStream fos = new FileOutputStream(cbzFile);
              ZipOutputStream zos = new ZipOutputStream(fos)) {

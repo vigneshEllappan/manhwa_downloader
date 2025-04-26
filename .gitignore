@@ -87,3 +87,4 @@ out/
 ### VS Code ###
 .vscode/
 **/src/main/resources/static
+**/tmp/

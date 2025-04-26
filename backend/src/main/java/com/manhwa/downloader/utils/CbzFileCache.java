@@ -1,6 +1,10 @@
 package com.manhwa.downloader.utils;
 
 import java.io.File;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -9,16 +13,25 @@ public class CbzFileCache {
     // Nested structure: Map<title, Map<chapter, filePath>>
     private static final Map<String, Map<String, String>> cache = new ConcurrentHashMap<>();
 
-    public static void processCacheDirectory(String rootPath){
+    private static List<String> supportedTitles = new ArrayList<>();
+
+    public static void processCacheDirectory(Path rootPath){
+        supportedTitles.add("Regressor of the Fallen Family");
+        supportedTitles.add("Release That Witch");
+        supportedTitles.add("Magic Emperor");
+        supportedTitles.add("Descended From Divinity");
+        supportedTitles.add("Regressed Life of The Sword Clan's Ignoble Reincarnator");
+        supportedTitles.add("The Greatest Estate Developer");
+        supportedTitles.add("Reincarnated Murim Lord");
         System.out.println("Processing Directory "+ rootPath);
-        File rootDir = new File(rootPath);
+        File rootDir = new File(String.valueOf(rootPath));
         if (!rootDir.exists() || !rootDir.isDirectory()) {
             rootDir.mkdirs();
         }
 
         for (File titleDir : rootDir.listFiles()) {
             System.out.println(titleDir);
-            if (titleDir.isDirectory()) {
+            if (titleDir.isDirectory() && supportedTitles.contains(titleDir.getName())) {
                 String titleName = titleDir.getName();
                 Map<String, String> chapterMap = new ConcurrentHashMap<>();
 
