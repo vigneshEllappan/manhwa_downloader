@@ -46,7 +46,8 @@ def download():
         file_path = handleDownload(data)
 
         if not file_path or not Path(file_path).exists():
-            return jsonify({"error": "File not found in cache/ Erro Downloading"}), 404
+            loadExistingCache()
+            return jsonify({"error": "File not found in cache/ Error Downloading"}), 404
 
         return send_file(
             file_path,

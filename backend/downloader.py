@@ -31,36 +31,43 @@ cbz_cache = {}  # Maps a cache key to CBZ file path
 
 # --- Downloader Class ---
 class ManwaDownloader:
-    def __init__(self, url):
+    def __init__(self, url, title, chapter):
         self.url = url
+        self.folder_name = (CACHE_DIR / title / chapter).resolve()
+        self.folder_name.mkdir(parents=True, exist_ok=True)
+        self.cbz_file_name = (CACHE_DIR / title / (chapter + '.cbz')).resolve() 
+        self.images = []
 
     def download_images(self, index, image_url):
         response = requests.get(image_url, stream=True)
-        img_data = io.BytesIO(response.content)
-        self.images.append({
-            "name": f"image_{index}.jpg",
-            "data": img_data
-        })
-        logger.info(f"Downloaded: image_{index}.jpg")
-        if not img_data:
-            raise Exception(f"Failed to Download : {image_url}")
+        file_name = f"image_{index:03d}.jpg"
+        file_path = (self.folder_name / file_name).resolve()
+        logger.info(file_path)
+        with open(file_path, 'wb') as f:
+            for chunk in response.iter_content(1024):
+                f.write(chunk)
+
+        self.images.append(file_path)  # Store the file path for later
+        logger.info(f"Downloaded and saved: {file_path}")
     
 
     def combine_images_in_batches(self):
         def natural_sort_key(image_dict):
-            match = re.search(r'image_(\d+)\.jpg', image_dict["name"])
+            match = re.search(r'image_(\d+)\.jpg', image_dict.name)
             return int(match.group(1)) if match else float('inf')
 
         self.images.sort(key=natural_sort_key)
-        
+
         combined_images = []
         batch_size = 4
         batches = [self.images[i:i+batch_size] for i in range(0, len(self.images), batch_size)]
 
         for idx, batch in enumerate(batches):
             imgs = []
-            for img_dict in batch:
-                img = Image.open(img_dict["data"]).convert("RGB")
+            logger.info(f"IDX: {idx}")
+            for img_path in batch:
+                logger.info(f"Image Path: {img_path}")
+                img = Image.open(img_path).convert("RGB")  # Ensure RGB for saving
                 imgs.append(img)
 
             if not imgs:
@@ -78,18 +85,19 @@ class ManwaDownloader:
                 combined_img.paste(img, (0, y_offset))
                 y_offset += img.height
 
-            combined_io = io.BytesIO()
-            combined_img.save(combined_io, format='JPEG')
-            combined_io.seek(0)
+            combined_name = f"page_{idx+1:02d}.jpg"
+            combined_path = Path(os.path.abspath(os.path.join(self.folder_name, combined_name)))
 
-            combined_images.append({
-                "name": f"page_{idx+1:02d}.jpg",
-                "data": combined_io
-            })
+            combined_img.save(combined_path)
+            logger.info(f"Saved combined image: {combined_path}")
+            combined_images.append(combined_path)
 
-            # Close individual image objects
             for img in imgs:
                 img.close()
+            for img_path in batch:
+                logger.info(img_path)
+                os.remove(str(img_path))
+                logger.info(f"Removed {img_path}")
 
         self.images = combined_images
 
@@ -108,18 +116,29 @@ class ManwaDownloader:
             thread.join()
 
         if len(self.images) > 20:
-            logger.info("Combining images in batches of 4 (in memory)...")
+            logger.info("Combining images in batches of 4 ...")
             self.combine_images_in_batches()
 
 
     def create_cbz(self):
-        cbz_buffer = io.BytesIO()
-        with zipfile.ZipFile(cbz_buffer, 'w', zipfile.ZIP_DEFLATED) as cbz:
-            for img in self.images:
-                cbz.writestr(img["name"], img["data"].getvalue())
-        cbz_buffer.seek(0)
-        logger.info("CBZ created fully in memory.")
-        return cbz_buffer.getvalue()
+        """Create a CBZ file from saved image files on disk"""
+
+        with zipfile.ZipFile(self.cbz_file_name, 'w', zipfile.ZIP_DEFLATED) as cbz:
+            for img_path in sorted(self.images, key=lambda p: p.name):
+                img_path = Path(img_path)  # Ensure it's a Path object
+                if not img_path.exists():
+                    raise Exception("Downloaded Images Missing")
+                cbz.write(img_path, arcname=img_path.name)
+
+        logger.info(f"CBZ successfully created at: {self.cbz_file_name}")# Get the chapter directory from the file path
+
+        logger.info(f"Chapter Directory: {self.folder_name}")
+        # Now only delete the chapter directory
+        if os.path.exists(self.folder_name):
+            shutil.rmtree(self.folder_name)
+            print(f"Deleted {self.folder_name}")
+        else:
+            print(f"{self.folder_name} does not exist.")
 
     def make_request(self):
         response = requests.get(self.url)
@@ -161,6 +180,7 @@ def sanitize_filename(name):
 
 def loadExistingCache():
     """Scans cache folder and rebuilds cbz_cache on startup"""
+    cbz_cache.clear()
     for title_dir in CACHE_DIR.iterdir():
         if title_dir.is_dir():
             title = title_dir.name
@@ -181,26 +201,14 @@ def handleDownload(data):
     if cache_key in cbz_cache:
         return cbz_cache[cache_key]
 
-    downloader = ManwaDownloader(url)
+    downloader = ManwaDownloader(url, title, chapter)
     if downloader.make_request() and downloader.parse_response():
         downloader.spawn_threads()
-        cbz_bytes = downloader.create_cbz()
-
-         # Path: cache/Title/Chapter - 1.cbz
-        title_dir = CACHE_DIR / title
-        title_dir.mkdir(parents=True, exist_ok=True)
-
-        file_name = f"{chapter}.cbz" if chapter.lower().startswith("chapter") else f"Chapter - {chapter}.cbz"
-        file_path = (title_dir / file_name).resolve()
-        # Assume downloader creates the file
-        # file_path = (CACHE_DIR / title / f"{chapter}.cbz").resolve()
-        logger.info(file_path)
-
-        with open(file_path, "wb") as f:
-            f.write(cbz_bytes)
+        downloader.create_cbz()
 
         loadExistingCache()
-        return file_path
+        if cache_key in cbz_cache:
+            return cbz_cache[cache_key]
     return None
 
 def handleChaptersGeneration(title):
