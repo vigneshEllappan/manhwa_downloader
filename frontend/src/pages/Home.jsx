@@ -9,7 +9,8 @@ function Home() {
         "Descended From Divinity",
         "Regressed Life of The Sword Clan's Ignoble Reincarnator",
         "The Greatest Estate Developer",
-        "Reincarnated Murim Lord"
+        "Reincarnated Murim Lord",
+        "SwordMaster's Youngest Son"
     ]
     const navigate = useNavigate();
     const handleClick = (title) => {
