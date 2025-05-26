@@ -10,7 +10,8 @@ function Home() {
         "Regressed Life of The Sword Clan's Ignoble Reincarnator",
         "The Greatest Estate Developer",
         "Reincarnated Murim Lord",
-        "SwordMaster's Youngest Son"
+        "SwordMaster's Youngest Son",
+        "The Regressed Mercenary's Machinations"
     ]
     const navigate = useNavigate();
     const handleClick = (title) => {
