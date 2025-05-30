@@ -11,7 +11,8 @@ function Home() {
         "The Greatest Estate Developer",
         "Reincarnated Murim Lord",
         "SwordMaster's Youngest Son",
-        "The Regressed Mercenary's Machinations"
+        "The Regressed Mercenary's Machinations",
+        "Duke's Eldest Son is a Regressed Hero"
     ]
     const navigate = useNavigate();
     const handleClick = (title) => {
