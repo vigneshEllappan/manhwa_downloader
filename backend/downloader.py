@@ -170,7 +170,8 @@ titleUrlMap = {
             "Reincarnated Murim Lord":"https://manhuaplus.me/manhua/reincarnated-murim-lord/ajax/chapters/",
             "SwordMaster's Youngest Son": "https://manhuaus.org/manga/swordmasters-youngest-son/",
             "The Regressed Mercenary's Machinations": "https://manhuaus.org/manga/the-regressed-mercenarys-machinations/",
-            "Duke's Eldest Son is a Regressed Hero": "https://manhuaus.org/manga/dukes-eldest-son-is-a-regressed-hero/"
+            "Duke's Eldest Son is a Regressed Hero": "https://manhuaus.org/manga/dukes-eldest-son-is-a-regressed-hero/",
+            "Eternally Regressing Knight": "https://manhuaus.org/manga/eternally-regressing-knight/"
         }
 
 # Function to extract the numbers from the string
