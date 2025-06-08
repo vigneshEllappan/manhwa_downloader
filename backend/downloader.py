@@ -148,8 +148,7 @@ class ManwaDownloader:
     def parse_response(self):
         xScrollContent = "div.page-break.no-gaps img"
         srcTag = "data-src"
-        if "reincarnated-murim-lord/" in self.url:
-            xScrollContent = "div.page-break img"
+        if 'mangaread' in self.url:
             srcTag = "src"
         self.image_paths = [] 
         img_tags = self.soup.select(xScrollContent)
@@ -167,11 +166,12 @@ titleUrlMap = {
             "Descended From Divinity": "https://manhuaus.org/manga/the-heavenly-demon-cant-live-a-normal-life/",
             "Regressed Life of The Sword Clan's Ignoble Reincarnator":"https://manhuaus.org/manga/regressed-life-of-the-sword-clans-ignoble-reincarnator/",
             "The Greatest Estate Developer":"https://manhuaus.org/manga/the-worlds-best-engineer/",
-            "Reincarnated Murim Lord":"https://manhuaplus.me/manhua/reincarnated-murim-lord/ajax/chapters/",
+            "Reincarnated Murim Lord":"https://www.mangaread.org/manga/reincarnated-heavenly-demon/",
             "SwordMaster's Youngest Son": "https://manhuaus.org/manga/swordmasters-youngest-son/",
             "The Regressed Mercenary's Machinations": "https://manhuaus.org/manga/the-regressed-mercenarys-machinations/",
             "Duke's Eldest Son is a Regressed Hero": "https://manhuaus.org/manga/dukes-eldest-son-is-a-regressed-hero/",
-            "Eternally Regressing Knight": "https://manhuaus.org/manga/eternally-regressing-knight/"
+            "Eternally Regressing Knight": "https://manhuaus.org/manga/eternally-regressing-knight/",
+            "Legend of The Northern Blade": "https://www.mangaread.org/manga/legend-of-the-northern-blade/"
         }
 
 # Function to extract the numbers from the string
@@ -220,20 +220,7 @@ def handleChaptersGeneration(title):
     if not site_url:
         return None
     try:
-        if title == 'Reincarnated Murim Lord':
-            data = {
-                "action": "manga_get_chapters",
-                "manga": "4498"
-            }
-
-            headers = {
-                "Content-Type": "application/x-www-form-urlencoded",
-                "User-Agent": "Mozilla/5.0"
-            }
-
-            response = requests.post(site_url, data=data, headers=headers)
-        else:
-            response = requests.get(site_url)
+        response = requests.get(site_url)
         soup = BeautifulSoup(response.text, "html.parser")
         links = soup.select("li.wp-manga-chapter a")
         data = {}

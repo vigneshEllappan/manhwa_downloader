@@ -13,7 +13,8 @@ function Home() {
         "SwordMaster's Youngest Son",
         "The Regressed Mercenary's Machinations",
         "Duke's Eldest Son is a Regressed Hero",
-        "Eternally Regressing Knight"
+        "Eternally Regressing Knight",
+        "Legend of The Northern Blade"
     ]
     const navigate = useNavigate();
     const handleClick = (title) => {
