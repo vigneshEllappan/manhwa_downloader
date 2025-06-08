@@ -222,13 +222,23 @@ def handleChaptersGeneration(title):
     try:
         response = requests.get(site_url)
         soup = BeautifulSoup(response.text, "html.parser")
-        links = soup.select("li.wp-manga-chapter a")
+        links = soup.select("li.wp-manga-chapter")
         data = {}
         for link in links:
-            href = link.get("href")
-            text = link.text.strip()
-            if "chapter" in href.lower():
-                data[text] = href
+            temp = {}
+            anchor = link.select_one("a")
+            span = link.select_one("span")
+            releaseDate = ''
+            if span:
+                releaseDate = span.text.strip()
+            if anchor:
+                href = anchor.get("href")
+                text = anchor.text.strip()
+                if "chapter" in href.lower():
+                    temp['url'] = href
+                    temp['release_date'] = releaseDate
+                    data[text] = temp
+ 
         sorted_dict = {k: data[k] for k in sorted(data.keys(), key=natural_key)}
         return json.dumps(sorted_dict)
     except Exception as e:

@@ -37,11 +37,20 @@ function Chapters() {
             return newSet;
         });
     };
+
+    const options = { year: "numeric", month: "short", day: "2-digit" };
     
+    const processDate = (data) => {
+        if (data && data.length > 0) {
+            const date = new Date(data);
+            return date.toLocaleDateString("en-US", options);
+        }
+        return data;
+    }
+
     const downloadChapter = (chapterTitle, url) => {
         GetCBZFile({ url, title, chapter: chapterTitle })
             .then((response) => {
-                console.log(response);
                 const url = window.URL.createObjectURL(new Blob([response], {
                     type: 'application/zip'  // CBZ = ZIP under the hood
                   }));
@@ -69,6 +78,7 @@ function Chapters() {
     return (
         <div className="chapters-container">
             <h2 className="chapters-heading">📖 Available Chapters</h2>
+            <h2 className="chapters-heading">{title}</h2>
 
             {loading ? (
                 <div className="spinner-container">
@@ -77,13 +87,13 @@ function Chapters() {
                 </div>
             ) : (
                 <div className="chapters-grid">
-                    {Object.entries(data).map(([chapterTitle, url]) => (
+                    {Object.entries(data).map(([chapterTitle, details]) => (
                         <div
                             key={chapterTitle}
                             className="chapter-card"
                             onClick={() =>
                                 !downloadingChapters.has(chapterTitle) &&
-                                handleChapterClick(chapterTitle, url)
+                                handleChapterClick(chapterTitle, details.url)
                             }
                             style={{
                                 pointerEvents: downloadingChapters.has(chapterTitle) ? 'none' : 'auto',
@@ -91,6 +101,7 @@ function Chapters() {
                             }}
                         >
                             <h4 className="chapter-card-title">{chapterTitle}</h4>
+                            <p className="chapter-card-subtitle">{processDate(details.release_date)}</p>
                             <p className="chapter-card-subtitle">
                                 {downloadingChapters.has(chapterTitle) ? (
                                     <span className="spinner-small"></span>
