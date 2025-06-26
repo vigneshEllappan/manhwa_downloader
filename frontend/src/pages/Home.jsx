@@ -14,7 +14,9 @@ function Home() {
         "The Regressed Mercenary's Machinations",
         "Duke's Eldest Son is a Regressed Hero",
         "Eternally Regressing Knight",
-        "Legend of The Northern Blade"
+        "Legend of The Northern Blade",
+        "Legendary Youngest Son of the Marquis House",
+        "Top Tier Providence: Secretly Cultivate for a Thousand Years"
     ]
     const navigate = useNavigate();
     const handleClick = (title) => {

@@ -171,7 +171,9 @@ titleUrlMap = {
             "The Regressed Mercenary's Machinations": "https://manhuaus.org/manga/the-regressed-mercenarys-machinations/",
             "Duke's Eldest Son is a Regressed Hero": "https://manhuaus.org/manga/dukes-eldest-son-is-a-regressed-hero/",
             "Eternally Regressing Knight": "https://manhuaus.org/manga/eternally-regressing-knight/",
-            "Legend of The Northern Blade": "https://www.mangaread.org/manga/legend-of-the-northern-blade/"
+            "Legend of The Northern Blade": "https://www.mangaread.org/manga/legend-of-the-northern-blade/",
+            "Legendary Youngest Son of the Marquis House": "https://manhuaus.org/manga/legendary-youngest-son-of-the-marquis-house/",
+            "Top Tier Providence: Secretly Cultivate for a Thousand Years": "https://manhuaus.org/manga/top-tier-providence-secretly-cultivate-for-a-thousand-years/"
         }
 
 # Function to extract the numbers from the string
