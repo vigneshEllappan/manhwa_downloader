@@ -174,6 +174,7 @@ titleUrlMap = {
             "Legend of The Northern Blade": "https://www.mangaread.org/manga/legend-of-the-northern-blade/",
             "Legendary Youngest Son of the Marquis House": "https://manhuaus.org/manga/legendary-youngest-son-of-the-marquis-house/",
             "Top Tier Providence: Secretly Cultivate for a Thousand Years": "https://manhuaus.org/manga/top-tier-providence-secretly-cultivate-for-a-thousand-years/"
+            "A Villain's Will to Survive": "https://manhuaus.org/manga/a-villains-will-to-survive/"
         }
 
 # Function to extract the numbers from the string

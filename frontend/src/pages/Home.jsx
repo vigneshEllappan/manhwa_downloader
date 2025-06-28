@@ -16,7 +16,8 @@ function Home() {
         "Eternally Regressing Knight",
         "Legend of The Northern Blade",
         "Legendary Youngest Son of the Marquis House",
-        "Top Tier Providence: Secretly Cultivate for a Thousand Years"
+        "Top Tier Providence: Secretly Cultivate for a Thousand Years",
+        "A Villain's Will to Survive"
     ]
     const navigate = useNavigate();
     const handleClick = (title) => {
